@@ -65,8 +65,7 @@ export const analyzePortfolio = async (
             riskScore: { type: Type.INTEGER },
             diversificationScore: { type: Type.INTEGER }
           }
-        },
-        thinkingConfig: { thinkingBudget: 0 }
+        }
       }
     });
 
@@ -128,6 +127,11 @@ export const generateInvestmentPlan = async (input: InvestmentPlanInput): Promis
        - For "Growth", consider Stocks or ETFs.
        - For "Speculative", consider Crypto.
        - Provide specific dollar amounts for at least 3-5 distinct assets.
+
+    Constraints:
+    - Keep executiveSummary concise (under 100 words).
+    - Limit recommendations to max 5 items.
+    - Limit suggestedAssets lists to max 5 items each.
 
     Output JSON structure:
     - isFeasible: boolean
@@ -225,8 +229,7 @@ export const generateInvestmentPlan = async (input: InvestmentPlanInput): Promis
               }
             }
           }
-        },
-        thinkingConfig: { thinkingBudget: 0 }
+        }
       }
     });
 

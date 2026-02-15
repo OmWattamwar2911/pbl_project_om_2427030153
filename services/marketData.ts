@@ -1,4 +1,4 @@
-import { MarketIndex, NewsItem, Timeframe, PerformancePoint, PortfolioItem } from "../types";
+import { MarketIndex, NewsItem, Timeframe, PerformancePoint } from "../types";
 
 // Mock data generator for demo purposes
 export const getMarketIndices = (): MarketIndex[] => {
@@ -88,14 +88,4 @@ export const getSparklineData = (): number[] => {
       points.push(val);
     }
     return points;
-};
-
-// Simulate import from external brokerage
-export const getMockBrokerageHoldings = (): PortfolioItem[] => {
-    return [
-        { id: `imp_${Date.now()}_1`, symbol: 'AAPL', amount: 45, type: 'stock', currentPrice: 182.50, value: 182.50 * 45, sparklineData: getSparklineData() },
-        { id: `imp_${Date.now()}_2`, symbol: 'MSFT', amount: 12, type: 'stock', currentPrice: 410.20, value: 410.20 * 12, sparklineData: getSparklineData() },
-        { id: `imp_${Date.now()}_3`, symbol: 'GOOGL', amount: 20, type: 'stock', currentPrice: 165.35, value: 165.35 * 20, sparklineData: getSparklineData() },
-        { id: `imp_${Date.now()}_4`, symbol: 'SOL', amount: 150, type: 'crypto', currentPrice: 145.00, value: 145.00 * 150, sparklineData: getSparklineData() },
-    ];
 };

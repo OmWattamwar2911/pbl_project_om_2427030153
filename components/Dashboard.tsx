@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { PortfolioItem, WatchlistItem, RiskProfile, AnalysisResult, MarketIndex, NewsItem, User, Timeframe, PerformancePoint, InvestmentPlanInput, PlanResult, PriceAlert } from '../types';
 import { analyzePortfolio, generateInvestmentPlan } from '../services/geminiService';
-import { getMarketIndices, getFinancialNews, getLivePrice, getPortfolioHistory, getSparklineData, getMockBrokerageHoldings } from '../services/marketData';
+import { getMarketIndices, getFinancialNews, getLivePrice, getPortfolioHistory, getSparklineData } from '../services/marketData';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid, Line, Legend, LineChart } from 'recharts';
 
 interface DashboardProps {
@@ -60,10 +60,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     const [newAsset, setNewAsset] = useState<{symbol: string, amount: string, type: string}>({
         symbol: '', amount: '', type: 'stock'
     });
-
-    // Brokerage Connection State
-    const [isBrokerageModalOpen, setIsBrokerageModalOpen] = useState(false);
-    const [isConnecting, setIsConnecting] = useState(false);
 
     // Add Watchlist Item State
     const [isWatchlistModalOpen, setIsWatchlistModalOpen] = useState(false);
@@ -249,22 +245,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
         });
     }, [news, newsSearch, newsFilter]);
 
-    // Calculate Sentiment Distribution for displayed news
-    const sentimentData = useMemo(() => {
-        const counts = { positive: 0, negative: 0, neutral: 0 };
-        filteredNews.forEach(n => {
-            if (n.sentiment === 'positive') counts.positive++;
-            else if (n.sentiment === 'negative') counts.negative++;
-            else counts.neutral++;
-        });
-
-        return [
-            { name: 'Positive', value: counts.positive, color: '#22c55e' }, // green-500
-            { name: 'Neutral', value: counts.neutral, color: '#64748b' }, // slate-500
-            { name: 'Negative', value: counts.negative, color: '#ef4444' }, // red-500
-        ].filter(d => d.value > 0);
-    }, [filteredNews]);
-
     const handlePortfolioSort = (key: string) => {
         let direction: SortDirection = 'asc';
         if (portfolioSort && portfolioSort.key === key && portfolioSort.direction === 'asc') {
@@ -313,24 +293,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
         } finally {
             setPlanningLoading(false);
         }
-    };
-
-    const handleConnectBrokerage = async () => {
-        setIsConnecting(true);
-        // Simulate API network delay
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        const importedHoldings = getMockBrokerageHoldings();
-        setPortfolio(prev => [...prev, ...importedHoldings]);
-        
-        setIsConnecting(false);
-        setIsBrokerageModalOpen(false);
-        setNotifications(prev => [{
-            id: Date.now().toString(),
-            message: `Successfully imported ${importedHoldings.length} assets from brokerage.`,
-            time: new Date().toLocaleTimeString()
-        }, ...prev]);
-        setShowNotifications(true);
     };
 
     const handleAddAsset = (e: React.FormEvent) => {
@@ -668,12 +630,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                                         className="w-full bg-white/5 border border-white/10 rounded-lg pl-9 pr-3 py-2 text-white focus:border-primary outline-none text-sm transition-colors focus:bg-white/10"
                                     />
                                 </div>
-                                <button 
-                                    onClick={() => setIsBrokerageModalOpen(true)}
-                                    className="bg-white/5 text-white border border-white/10 px-4 py-2 rounded-lg font-bold text-sm hover:bg-white/10 flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto transition-colors"
-                                >
-                                    <span className="material-symbols-outlined text-sm">link</span> Connect Brokerage
-                                </button>
                                 <button 
                                     onClick={() => setIsAddModalOpen(true)}
                                     className="bg-primary text-background-dark px-4 py-2 rounded-lg font-bold text-sm hover:brightness-110 flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto"
@@ -1480,110 +1436,59 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                             </div>
                         </div>
 
-                        <div className="flex flex-col lg:flex-row gap-8">
-                            <div className="flex-1 order-2 lg:order-1">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {filteredNews.length > 0 ? (
-                                        filteredNews.map(item => (
-                                            <div key={item.id} className="group relative bg-white/5 p-5 rounded-2xl border border-white/5 hover:border-primary/30 transition-all hover:-translate-y-1">
-                                                <div className={`absolute left-0 top-6 bottom-6 w-1 rounded-r-full ${
-                                                    item.sentiment === 'positive' ? 'bg-green-500' : 
-                                                    item.sentiment === 'negative' ? 'bg-red-500' : 'bg-slate-500'
-                                                }`}></div>
-                                                
-                                                <div className="pl-4">
-                                                    <div className="flex justify-between items-start mb-2">
-                                                        <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider flex items-center gap-1">
-                                                            {item.source} • {item.time}
-                                                        </span>
-                                                        <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border ${
-                                                            item.sentiment === 'positive' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 
-                                                            item.sentiment === 'negative' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20'
-                                                        }`}>
-                                                            {item.sentiment}
-                                                        </span>
-                                                    </div>
-                                                    
-                                                    <h4 className="text-white font-bold text-base mb-3 leading-snug group-hover:text-primary transition-colors">
-                                                        {item.title}
-                                                    </h4>
-                                                    
-                                                    <div className="flex items-center justify-between mt-4">
-                                                         <div className="flex items-center gap-2">
-                                                            <button className="text-xs text-slate-400 hover:text-white flex items-center gap-1 transition-colors">
-                                                                <span className="material-symbols-outlined text-sm">share</span> Share
-                                                            </button>
-                                                            <button className="text-xs text-slate-400 hover:text-white flex items-center gap-1 transition-colors">
-                                                                <span className="material-symbols-outlined text-sm">bookmark</span> Save
-                                                            </button>
-                                                         </div>
-                                                         <a 
-                                                            href={item.url} 
-                                                            target="_blank" 
-                                                            rel="noopener noreferrer"
-                                                            className="text-xs font-bold text-primary flex items-center gap-1 hover:gap-2 transition-all"
-                                                         >
-                                                            Read More <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                                                         </a>
-                                                    </div>
-                                                </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {filteredNews.length > 0 ? (
+                                filteredNews.map(item => (
+                                    <div key={item.id} className="group relative bg-white/5 p-5 rounded-2xl border border-white/5 hover:border-primary/30 transition-all hover:-translate-y-1">
+                                        <div className={`absolute left-0 top-6 bottom-6 w-1 rounded-r-full ${
+                                            item.sentiment === 'positive' ? 'bg-green-500' : 
+                                            item.sentiment === 'negative' ? 'bg-red-500' : 'bg-slate-500'
+                                        }`}></div>
+                                        
+                                        <div className="pl-4">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider flex items-center gap-1">
+                                                    {item.source} • {item.time}
+                                                </span>
+                                                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border ${
+                                                    item.sentiment === 'positive' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 
+                                                    item.sentiment === 'negative' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20'
+                                                }`}>
+                                                    {item.sentiment}
+                                                </span>
                                             </div>
-                                        ))
-                                    ) : (
-                                        <div className="col-span-1 md:col-span-2 py-12 text-center text-slate-500">
-                                            <span className="material-symbols-outlined text-4xl mb-2 opacity-50">find_in_page</span>
-                                            <p>No news found matching your criteria.</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="w-full lg:w-72 shrink-0 order-1 lg:order-2">
-                                <div className="bg-white/5 rounded-2xl p-6 border border-white/5 sticky top-6">
-                                     <h5 className="font-bold text-white mb-4 text-sm uppercase tracking-wider">Sentiment Analysis</h5>
-                                     <div className="h-[200px] w-full relative">
-                                         <ResponsiveContainer width="100%" height="100%">
-                                             <PieChart>
-                                                 <Pie
-                                                     data={sentimentData}
-                                                     cx="50%"
-                                                     cy="50%"
-                                                     innerRadius={60}
-                                                     outerRadius={80}
-                                                     paddingAngle={5}
-                                                     dataKey="value"
-                                                 >
-                                                     {sentimentData.map((entry, index) => (
-                                                         <Cell key={`cell-${index}`} fill={entry.color} stroke="rgba(0,0,0,0)" />
-                                                     ))}
-                                                 </Pie>
-                                                 <Tooltip 
-                                                     contentStyle={{ backgroundColor: '#0a0a0a', borderColor: '#333', borderRadius: '8px' }}
-                                                     itemStyle={{ color: '#fff', fontSize: '12px' }}
-                                                     formatter={(value: number) => [value, 'Articles']}
-                                                 />
-                                             </PieChart>
-                                         </ResponsiveContainer>
-                                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                             <div className="text-center">
-                                                 <span className="text-2xl font-bold text-white">{filteredNews.length}</span>
-                                                 <p className="text-[10px] text-slate-500 uppercase">Articles</p>
-                                             </div>
-                                         </div>
-                                     </div>
-                                     <div className="mt-4 space-y-2">
-                                         {sentimentData.map(d => (
-                                             <div key={d.name} className="flex justify-between items-center text-xs">
+                                            
+                                            <h4 className="text-white font-bold text-base mb-3 leading-snug group-hover:text-primary transition-colors">
+                                                {item.title}
+                                            </h4>
+                                            
+                                            <div className="flex items-center justify-between mt-4">
                                                  <div className="flex items-center gap-2">
-                                                     <div className="w-2 h-2 rounded-full" style={{backgroundColor: d.color}}></div>
-                                                     <span className="text-slate-300">{d.name}</span>
+                                                    <button className="text-xs text-slate-400 hover:text-white flex items-center gap-1 transition-colors">
+                                                        <span className="material-symbols-outlined text-sm">share</span> Share
+                                                    </button>
+                                                    <button className="text-xs text-slate-400 hover:text-white flex items-center gap-1 transition-colors">
+                                                        <span className="material-symbols-outlined text-sm">bookmark</span> Save
+                                                    </button>
                                                  </div>
-                                                 <span className="font-bold text-white">{filteredNews.length > 0 ? Math.round((d.value / filteredNews.length) * 100) : 0}%</span>
-                                             </div>
-                                         ))}
-                                     </div>
+                                                 <a 
+                                                    href={item.url} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer"
+                                                    className="text-xs font-bold text-primary flex items-center gap-1 hover:gap-2 transition-all"
+                                                 >
+                                                    Read More <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                                                 </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="col-span-1 md:col-span-2 py-12 text-center text-slate-500">
+                                    <span className="material-symbols-outlined text-4xl mb-2 opacity-50">find_in_page</span>
+                                    <p>No news found matching your criteria.</p>
                                 </div>
-                            </div>
+                            )}
                         </div>
                    </div>
                 </div>
@@ -1808,60 +1713,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                 </div>
             )}
             
-             {/* BROKERAGE CONNECTION MODAL */}
-             {isBrokerageModalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsBrokerageModalOpen(false)}></div>
-                    <div className="relative w-full max-w-md bg-background-dark border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl animate-fade-in-up m-4">
-                        <button onClick={() => setIsBrokerageModalOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white">
-                            <span className="material-symbols-outlined">close</span>
-                        </button>
-                        
-                        <div className="text-center mb-6">
-                             <div className="inline-flex p-3 bg-primary/10 rounded-2xl mb-4 text-primary">
-                                <span className="material-symbols-outlined text-3xl">account_balance</span>
-                             </div>
-                             <h3 className="text-xl font-bold text-white">Connect Brokerage</h3>
-                             <p className="text-slate-400 text-sm mt-2">Securely import your portfolio holdings</p>
-                        </div>
-                        
-                        <div className="space-y-3 mb-6">
-                            {['SafeTrade', 'Robinhood (Mock)', 'Coinbase (Mock)'].map((broker) => (
-                                <button key={broker} className="w-full flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10 hover:border-primary/50 hover:bg-white/10 transition-all text-left group">
-                                    <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-white group-hover:bg-primary/20 transition-colors">
-                                        <span className="material-symbols-outlined text-xl">corporate_fare</span>
-                                    </div>
-                                    <span className="font-bold text-slate-300 group-hover:text-white">{broker}</span>
-                                    <span className="material-symbols-outlined ml-auto text-slate-500 group-hover:text-primary">chevron_right</span>
-                                </button>
-                            ))}
-                        </div>
-                        
-                        <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl flex gap-3 mb-6">
-                             <span className="material-symbols-outlined text-blue-400 shrink-0">info</span>
-                             <p className="text-xs text-blue-200/80 leading-relaxed">
-                                 This is a simulated connection. No real credentials will be sent. Data is generated for demonstration purposes.
-                             </p>
-                        </div>
-
-                        <button 
-                            onClick={handleConnectBrokerage}
-                            disabled={isConnecting}
-                            className="w-full bg-primary text-background-dark font-bold py-3.5 rounded-xl neon-glow hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                        >
-                            {isConnecting ? (
-                                <>
-                                    <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-                                    Connecting Securely...
-                                </>
-                            ) : (
-                                'Simulate Connection'
-                            )}
-                        </button>
-                    </div>
-                </div>
-            )}
-
             {/* ADD WATCHLIST ITEM MODAL */}
             {isWatchlistModalOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
