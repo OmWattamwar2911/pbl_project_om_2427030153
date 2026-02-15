@@ -249,6 +249,22 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
         });
     }, [news, newsSearch, newsFilter]);
 
+    // Calculate Sentiment Distribution for displayed news
+    const sentimentData = useMemo(() => {
+        const counts = { positive: 0, negative: 0, neutral: 0 };
+        filteredNews.forEach(n => {
+            if (n.sentiment === 'positive') counts.positive++;
+            else if (n.sentiment === 'negative') counts.negative++;
+            else counts.neutral++;
+        });
+
+        return [
+            { name: 'Positive', value: counts.positive, color: '#22c55e' }, // green-500
+            { name: 'Neutral', value: counts.neutral, color: '#64748b' }, // slate-500
+            { name: 'Negative', value: counts.negative, color: '#ef4444' }, // red-500
+        ].filter(d => d.value > 0);
+    }, [filteredNews]);
+
     const handlePortfolioSort = (key: string) => {
         let direction: SortDirection = 'asc';
         if (portfolioSort && portfolioSort.key === key && portfolioSort.direction === 'asc') {
@@ -1464,59 +1480,110 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {filteredNews.length > 0 ? (
-                                filteredNews.map(item => (
-                                    <div key={item.id} className="group relative bg-white/5 p-5 rounded-2xl border border-white/5 hover:border-primary/30 transition-all hover:-translate-y-1">
-                                        <div className={`absolute left-0 top-6 bottom-6 w-1 rounded-r-full ${
-                                            item.sentiment === 'positive' ? 'bg-green-500' : 
-                                            item.sentiment === 'negative' ? 'bg-red-500' : 'bg-slate-500'
-                                        }`}></div>
-                                        
-                                        <div className="pl-4">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider flex items-center gap-1">
-                                                    {item.source} • {item.time}
-                                                </span>
-                                                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border ${
-                                                    item.sentiment === 'positive' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 
-                                                    item.sentiment === 'negative' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20'
-                                                }`}>
-                                                    {item.sentiment}
-                                                </span>
+                        <div className="flex flex-col lg:flex-row gap-8">
+                            <div className="flex-1 order-2 lg:order-1">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {filteredNews.length > 0 ? (
+                                        filteredNews.map(item => (
+                                            <div key={item.id} className="group relative bg-white/5 p-5 rounded-2xl border border-white/5 hover:border-primary/30 transition-all hover:-translate-y-1">
+                                                <div className={`absolute left-0 top-6 bottom-6 w-1 rounded-r-full ${
+                                                    item.sentiment === 'positive' ? 'bg-green-500' : 
+                                                    item.sentiment === 'negative' ? 'bg-red-500' : 'bg-slate-500'
+                                                }`}></div>
+                                                
+                                                <div className="pl-4">
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider flex items-center gap-1">
+                                                            {item.source} • {item.time}
+                                                        </span>
+                                                        <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border ${
+                                                            item.sentiment === 'positive' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 
+                                                            item.sentiment === 'negative' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20'
+                                                        }`}>
+                                                            {item.sentiment}
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    <h4 className="text-white font-bold text-base mb-3 leading-snug group-hover:text-primary transition-colors">
+                                                        {item.title}
+                                                    </h4>
+                                                    
+                                                    <div className="flex items-center justify-between mt-4">
+                                                         <div className="flex items-center gap-2">
+                                                            <button className="text-xs text-slate-400 hover:text-white flex items-center gap-1 transition-colors">
+                                                                <span className="material-symbols-outlined text-sm">share</span> Share
+                                                            </button>
+                                                            <button className="text-xs text-slate-400 hover:text-white flex items-center gap-1 transition-colors">
+                                                                <span className="material-symbols-outlined text-sm">bookmark</span> Save
+                                                            </button>
+                                                         </div>
+                                                         <a 
+                                                            href={item.url} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer"
+                                                            className="text-xs font-bold text-primary flex items-center gap-1 hover:gap-2 transition-all"
+                                                         >
+                                                            Read More <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                                                         </a>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            
-                                            <h4 className="text-white font-bold text-base mb-3 leading-snug group-hover:text-primary transition-colors">
-                                                {item.title}
-                                            </h4>
-                                            
-                                            <div className="flex items-center justify-between mt-4">
-                                                 <div className="flex items-center gap-2">
-                                                    <button className="text-xs text-slate-400 hover:text-white flex items-center gap-1 transition-colors">
-                                                        <span className="material-symbols-outlined text-sm">share</span> Share
-                                                    </button>
-                                                    <button className="text-xs text-slate-400 hover:text-white flex items-center gap-1 transition-colors">
-                                                        <span className="material-symbols-outlined text-sm">bookmark</span> Save
-                                                    </button>
-                                                 </div>
-                                                 <a 
-                                                    href={item.url} 
-                                                    target="_blank" 
-                                                    rel="noopener noreferrer"
-                                                    className="text-xs font-bold text-primary flex items-center gap-1 hover:gap-2 transition-all"
-                                                 >
-                                                    Read More <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                                                 </a>
-                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="col-span-1 md:col-span-2 py-12 text-center text-slate-500">
+                                            <span className="material-symbols-outlined text-4xl mb-2 opacity-50">find_in_page</span>
+                                            <p>No news found matching your criteria.</p>
                                         </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="col-span-1 md:col-span-2 py-12 text-center text-slate-500">
-                                    <span className="material-symbols-outlined text-4xl mb-2 opacity-50">find_in_page</span>
-                                    <p>No news found matching your criteria.</p>
+                                    )}
                                 </div>
-                            )}
+                            </div>
+
+                            <div className="w-full lg:w-72 shrink-0 order-1 lg:order-2">
+                                <div className="bg-white/5 rounded-2xl p-6 border border-white/5 sticky top-6">
+                                     <h5 className="font-bold text-white mb-4 text-sm uppercase tracking-wider">Sentiment Analysis</h5>
+                                     <div className="h-[200px] w-full relative">
+                                         <ResponsiveContainer width="100%" height="100%">
+                                             <PieChart>
+                                                 <Pie
+                                                     data={sentimentData}
+                                                     cx="50%"
+                                                     cy="50%"
+                                                     innerRadius={60}
+                                                     outerRadius={80}
+                                                     paddingAngle={5}
+                                                     dataKey="value"
+                                                 >
+                                                     {sentimentData.map((entry, index) => (
+                                                         <Cell key={`cell-${index}`} fill={entry.color} stroke="rgba(0,0,0,0)" />
+                                                     ))}
+                                                 </Pie>
+                                                 <Tooltip 
+                                                     contentStyle={{ backgroundColor: '#0a0a0a', borderColor: '#333', borderRadius: '8px' }}
+                                                     itemStyle={{ color: '#fff', fontSize: '12px' }}
+                                                     formatter={(value: number) => [value, 'Articles']}
+                                                 />
+                                             </PieChart>
+                                         </ResponsiveContainer>
+                                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                             <div className="text-center">
+                                                 <span className="text-2xl font-bold text-white">{filteredNews.length}</span>
+                                                 <p className="text-[10px] text-slate-500 uppercase">Articles</p>
+                                             </div>
+                                         </div>
+                                     </div>
+                                     <div className="mt-4 space-y-2">
+                                         {sentimentData.map(d => (
+                                             <div key={d.name} className="flex justify-between items-center text-xs">
+                                                 <div className="flex items-center gap-2">
+                                                     <div className="w-2 h-2 rounded-full" style={{backgroundColor: d.color}}></div>
+                                                     <span className="text-slate-300">{d.name}</span>
+                                                 </div>
+                                                 <span className="font-bold text-white">{filteredNews.length > 0 ? Math.round((d.value / filteredNews.length) * 100) : 0}%</span>
+                                             </div>
+                                         ))}
+                                     </div>
+                                </div>
+                            </div>
                         </div>
                    </div>
                 </div>
