@@ -1318,18 +1318,36 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
 
                                 {/* Portfolio Suggestions */}
                                 {analysis.portfolioSuggestions && analysis.portfolioSuggestions.length > 0 && (
-                                    <div className="mb-8">
-                                        <h4 className="text-sm font-bold text-white mb-3 uppercase tracking-wider flex items-center gap-2">
-                                            <span className="material-symbols-outlined text-primary text-sm">tips_and_updates</span>
-                                            AI Portfolio Suggestions
-                                        </h4>
+                                    <div className="mb-8 animate-fade-in-up">
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <div className="p-1.5 bg-primary/20 rounded-lg text-primary shadow-[0_0_10px_rgba(37,192,244,0.3)]">
+                                                 <span className="material-symbols-outlined text-sm">tips_and_updates</span>
+                                            </div>
+                                            <h4 className="text-sm font-bold text-white uppercase tracking-wider">AI Portfolio Suggestions</h4>
+                                        </div>
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                             {analysis.portfolioSuggestions.map((suggestion, i) => (
-                                                <div key={i} className="bg-primary/10 border border-primary/20 p-4 rounded-xl flex flex-col justify-between">
-                                                    <p className="text-slate-200 text-xs font-medium leading-relaxed">{suggestion}</p>
-                                                    <div className="mt-3 flex items-center gap-2 text-[10px] uppercase font-bold text-primary">
-                                                        <span>Suggestion {i + 1}</span>
-                                                        <span className="h-px bg-primary/30 flex-1"></span>
+                                                <div key={i} className="group bg-gradient-to-br from-white/10 to-transparent border border-white/10 p-5 rounded-2xl hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 relative overflow-hidden flex flex-col h-full">
+                                                    <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-10 transition-opacity duration-500 transform translate-x-2 -translate-y-2 group-hover:translate-x-0 group-hover:translate-y-0">
+                                                         <span className="material-symbols-outlined text-5xl">auto_awesome</span>
+                                                    </div>
+                                                    
+                                                    <div className="flex items-center gap-2 mb-3">
+                                                        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold border border-primary/30 shadow-[0_0_8px_rgba(37,192,244,0.3)]">
+                                                            {i + 1}
+                                                        </span>
+                                                        <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Action Item</span>
+                                                    </div>
+                                                    
+                                                    <p className="text-slate-200 text-sm font-medium leading-relaxed relative z-10 group-hover:text-white transition-colors flex-grow">
+                                                        {suggestion}
+                                                    </p>
+                                                    
+                                                    <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between opacity-60 group-hover:opacity-100 transition-opacity">
+                                                        <span className="text-[10px] text-slate-500 font-medium">AI Confidence: High</span>
+                                                         <button className="text-primary hover:text-white transition-colors">
+                                                            <span className="material-symbols-outlined text-sm transform group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                                                         </button>
                                                     </div>
                                                 </div>
                                             ))}
