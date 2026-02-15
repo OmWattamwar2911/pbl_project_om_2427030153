@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { PortfolioItem, WatchlistItem, RiskProfile, AnalysisResult, MarketIndex, NewsItem, User, Timeframe, PerformancePoint, InvestmentPlanInput, PlanResult, PriceAlert } from '../types';
 import { analyzePortfolio, generateInvestmentPlan } from '../services/geminiService';
-import { getMarketIndices, getFinancialNews, getLivePrice, getPortfolioHistory, getSparklineData } from '../services/marketData';
+import { getMarketIndices, getFinancialNews, getLivePrice, getPortfolioHistory, getSparklineData, getMockBrokerageHoldings } from '../services/marketData';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid, Line, Legend, LineChart } from 'recharts';
 
 interface DashboardProps {
@@ -60,6 +60,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     const [newAsset, setNewAsset] = useState<{symbol: string, amount: string, type: string}>({
         symbol: '', amount: '', type: 'stock'
     });
+
+    // Brokerage Connection State
+    const [isBrokerageModalOpen, setIsBrokerageModalOpen] = useState(false);
+    const [isConnecting, setIsConnecting] = useState(false);
 
     // Add Watchlist Item State
     const [isWatchlistModalOpen, setIsWatchlistModalOpen] = useState(false);
@@ -293,6 +297,24 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
         } finally {
             setPlanningLoading(false);
         }
+    };
+
+    const handleConnectBrokerage = async () => {
+        setIsConnecting(true);
+        // Simulate API network delay
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const importedHoldings = getMockBrokerageHoldings();
+        setPortfolio(prev => [...prev, ...importedHoldings]);
+        
+        setIsConnecting(false);
+        setIsBrokerageModalOpen(false);
+        setNotifications(prev => [{
+            id: Date.now().toString(),
+            message: `Successfully imported ${importedHoldings.length} assets from brokerage.`,
+            time: new Date().toLocaleTimeString()
+        }, ...prev]);
+        setShowNotifications(true);
     };
 
     const handleAddAsset = (e: React.FormEvent) => {
@@ -630,6 +652,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                                         className="w-full bg-white/5 border border-white/10 rounded-lg pl-9 pr-3 py-2 text-white focus:border-primary outline-none text-sm transition-colors focus:bg-white/10"
                                     />
                                 </div>
+                                <button 
+                                    onClick={() => setIsBrokerageModalOpen(true)}
+                                    className="bg-white/5 text-white border border-white/10 px-4 py-2 rounded-lg font-bold text-sm hover:bg-white/10 flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto transition-colors"
+                                >
+                                    <span className="material-symbols-outlined text-sm">link</span> Connect Brokerage
+                                </button>
                                 <button 
                                     onClick={() => setIsAddModalOpen(true)}
                                     className="bg-primary text-background-dark px-4 py-2 rounded-lg font-bold text-sm hover:brightness-110 flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto"
@@ -1713,6 +1741,60 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                 </div>
             )}
             
+             {/* BROKERAGE CONNECTION MODAL */}
+             {isBrokerageModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsBrokerageModalOpen(false)}></div>
+                    <div className="relative w-full max-w-md bg-background-dark border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl animate-fade-in-up m-4">
+                        <button onClick={() => setIsBrokerageModalOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white">
+                            <span className="material-symbols-outlined">close</span>
+                        </button>
+                        
+                        <div className="text-center mb-6">
+                             <div className="inline-flex p-3 bg-primary/10 rounded-2xl mb-4 text-primary">
+                                <span className="material-symbols-outlined text-3xl">account_balance</span>
+                             </div>
+                             <h3 className="text-xl font-bold text-white">Connect Brokerage</h3>
+                             <p className="text-slate-400 text-sm mt-2">Securely import your portfolio holdings</p>
+                        </div>
+                        
+                        <div className="space-y-3 mb-6">
+                            {['SafeTrade', 'Robinhood (Mock)', 'Coinbase (Mock)'].map((broker) => (
+                                <button key={broker} className="w-full flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10 hover:border-primary/50 hover:bg-white/10 transition-all text-left group">
+                                    <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-white group-hover:bg-primary/20 transition-colors">
+                                        <span className="material-symbols-outlined text-xl">corporate_fare</span>
+                                    </div>
+                                    <span className="font-bold text-slate-300 group-hover:text-white">{broker}</span>
+                                    <span className="material-symbols-outlined ml-auto text-slate-500 group-hover:text-primary">chevron_right</span>
+                                </button>
+                            ))}
+                        </div>
+                        
+                        <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl flex gap-3 mb-6">
+                             <span className="material-symbols-outlined text-blue-400 shrink-0">info</span>
+                             <p className="text-xs text-blue-200/80 leading-relaxed">
+                                 This is a simulated connection. No real credentials will be sent. Data is generated for demonstration purposes.
+                             </p>
+                        </div>
+
+                        <button 
+                            onClick={handleConnectBrokerage}
+                            disabled={isConnecting}
+                            className="w-full bg-primary text-background-dark font-bold py-3.5 rounded-xl neon-glow hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                            {isConnecting ? (
+                                <>
+                                    <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                                    Connecting Securely...
+                                </>
+                            ) : (
+                                'Simulate Connection'
+                            )}
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* ADD WATCHLIST ITEM MODAL */}
             {isWatchlistModalOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
